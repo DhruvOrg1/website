@@ -3,8 +3,9 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app import crud, schemas
+from app import crud, models, schemas
 from app.database import get_db
+from app.deps import get_current_user
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -31,7 +32,11 @@ def list_products(
 @router.post(
     "", response_model=schemas.ProductRead, status_code=status.HTTP_201_CREATED
 )
-def create_product(payload: schemas.ProductCreate, db: Session = Depends(get_db)):
+def create_product(
+    payload: schemas.ProductCreate,
+    db: Session = Depends(get_db),
+    _user: models.User = Depends(get_current_user),
+):
     return crud.create_product(db, payload)
 
 
@@ -45,6 +50,7 @@ def update_product(
     product_id: int,
     payload: schemas.ProductUpdate,
     db: Session = Depends(get_db),
+    _user: models.User = Depends(get_current_user),
 ):
     return crud.update_product(db, product_id, payload)
 
@@ -54,11 +60,16 @@ def adjust_stock(
     product_id: int,
     payload: schemas.StockAdjustment,
     db: Session = Depends(get_db),
+    _user: models.User = Depends(get_current_user),
 ):
     """Add or remove stock relative to the current quantity."""
     return crud.adjust_stock(db, product_id, payload)
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_product(product_id: int, db: Session = Depends(get_db)):
+def delete_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+    _user: models.User = Depends(get_current_user),
+):
     crud.delete_product(db, product_id)
